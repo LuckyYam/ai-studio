@@ -1,0 +1,8 @@
+from .auth import AUTH_VALIDATION_JS, KUTE_INJECTION
+from .dashboard import DURATION_LIVE_JS
+from .dialogs import RENAME_LIVE_WATCHER_JS
+from .dock import DOCK_ALIGN_JS
+from .menu import MENU_CLOSE_JS
+from .profile import PROFILE_CARD_FIX_JS
+
+__all__ = ['MENU_CLOSE_JS', 'PROFILE_CARD_FIX_JS', 'RENAME_LIVE_WATCHER_JS', 'KUTE_INJECTION', 'AUTH_VALIDATION_JS', 'DOCK_ALIGN_JS', 'DURATION_LIVE_JS']
