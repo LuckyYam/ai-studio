@@ -38,8 +38,9 @@ A full-stack AI chat assistant built with **Streamlit**, **Google Gemini**, and 
 - Multiple Gemini models selectable per conversation (Flash, Flash-Lite, Flash Preview variants)
 - Full conversation history preserved and replayed into each chat session
 - Optional **web search** grounding (Google Search tool) for supported models, with cited sources
+- **URL context fetching:** non-YouTube links found in a message are fetched via Gemini's URL context tool, so responses (and auto-generated conversation titles) can be grounded in the actual page content rather than just the raw link text
 - **File attachments:** images, video, audio, and PDF. They are sent directly to Gemini as multimodal input
-- **YouTube link detection:** links are parsed out of the prompt and sent as video input
+- **YouTube link detection:** links are parsed out of the prompt and sent as native video input, separate from the URL context flow
 - Regenerate the last assistant response without losing the rest of the conversation
 - Copy-to-clipboard on any assistant message
 - **Structured document generation:** it can generate documents (PDF/docx/csc) and send it as a downloadable content to the user, if the user asks for it
@@ -99,7 +100,7 @@ A full-stack AI chat assistant built with **Streamlit**, **Google Gemini**, and 
 ├── core/
 │   ├── config.py               # Env vars, constants, DEFAULTS, load_config()
 │   ├── database.py             # Database class — all MySQL queries
-│   ├── chatbot.py              # Gemini chat/session/title generation
+│   ├── chatbot.py              # Gemini chat/session/title generation, URL context wiring
 │   ├── mailer.py                # OTP email sending
 │   └── models/                 # TypedDicts & Pydantic models
 ├── auth/
@@ -356,9 +357,10 @@ The app is designed to fail gracefully rather than crash:
 
 ## Known Limitations
 
-- Structured document generation (PDF/DOCX/CSV) requires the model to route through a JSON-mode system instruction, which is disabled while Web Search is active (Gemini doesn't support both simultaneously in this setup).
+- Structured document generation (PDF/DOCX/CSV) requires the model to route through a JSON-mode system instruction, which is disabled while Web Search is active. Gemini 2.x models don't support tool use (Google Search, URL context) and structured JSON output in the same request, so on those models tools are only passed to the API when Web Search is explicitly toggled on, and structured document generation is unavailable for the rest of that session. Gemini 3 models don't have this restriction, so URL context stays available alongside structured output regardless of the Web Search toggle.
+- Occasionally, Web Search-grounded responses may return empty text while grounding metadata is still populated. I highly suspect this is because of the limited max output tokens.
 - `streamlit-cookies-controller` is retained as a fallback for environments without `st.context.cookies`; on the very first script run, its internal cache may be unhydrated, which is handled defensively but is a known quirk of the library.
-- Web search grounding/citations are only available on Gemini 2.x model variants (since mine is free tier 🥹).
+- Web search grounding are only available on Gemini 2.x model variants (since mine is free tier 🥹).
 
 ---
 

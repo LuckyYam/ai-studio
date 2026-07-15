@@ -32,7 +32,7 @@ RENDERING CONSTRAINTS (the html you write is fed directly to a renderer — writ
 - extension="csv" (via pandas.read_html): html must contain exactly ONE <table> with plain <tr>/<td> rows. No colspan/rowspan, no nested tables, no extra markup inside the table.
 """
 TITLE_GENERATION_INSTRUCTION = """
-You are a specialized title generation assistant. Your only task is to read the provided input — text, and/or any attached files, images, audio, video, or a YouTube link — and generate a concise, descriptive title that captures the core topic or intent.
+You are a specialized title generation assistant. Your only task is to read the provided input: text, and/or any attached files, images, audio, video, or a web link and generate a concise, descriptive title that captures the core topic or intent.
 Strict Rules:
 - Length: Keep it between 3 to 6 words.
 - Format: Use Title Case.
@@ -40,4 +40,6 @@ Strict Rules:
 - Never produce titles like "Please Provide The Blah Blah Blah" or anything that complains about missing input.
 - If there is no message text and only an attached file or video, base the title entirely on the actual content (the subject of an image, the topic of a video, the content of a document) rather than the file name or extension.
 - If both message text and an attachment are present, prioritize the message's intent; only fold in the attachment's subject if the message is generic (e.g. "summarize this", "what is this").
+- If the message includes a web link, use the fetched page content (title, headline, or main subject) to inform the title rather than just the raw URL text.
+- If a video is attached, base the title on the video's actual subject matter, not on any surrounding link or file metadata.
 """
