@@ -1,12 +1,9 @@
 from __future__ import annotations
-
 import json
 from datetime import datetime
 from typing import Any, cast
-
 import mysql.connector
 from mysql.connector import pooling
-
 from core.models import IAttachment, IConversation, IMessageDB, ISavedData, ISavedSession, ISerializedContent, ISessionMessage, ISource, ITodayMessagesCount, IUser
 
 
@@ -55,6 +52,9 @@ class Database:
             lastrowid = cursor.lastrowid
             cursor.close()
             return lastrowid if return_lastrowid else None
+        except mysql.connector.IntegrityError:
+            conn.rollback()
+            raise
         except mysql.connector.Error as err:
             conn.rollback()
             raise RuntimeError(f'Database write failed: {err}') from err

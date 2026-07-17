@@ -30,7 +30,7 @@ def _restore_bytes(obj: Any):
     return obj
 
 
-def encode_history_for_storage(history: list[ContentOrDict]) -> list[dict[str, Any]]:
+def encode_history_for_storage(history: list[ContentOrDict] | list[Content]) -> list[dict[str, Any]]:
     return cast(list[dict[str, Any]], [_json_safe(cast(Content, content).model_dump(mode='python')) for content in history])
 
 

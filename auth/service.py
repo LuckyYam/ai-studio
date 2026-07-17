@@ -28,7 +28,6 @@ def logout():
             <script>
             (function () {{
                 document.cookie = "{AUTH_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
-                window.parent.location.reload();
             }})();
             </script>
         """,
@@ -38,3 +37,4 @@ def logout():
     for key in keys_to_clear:
         st.session_state.pop(key, None)
     time.sleep(0.2)
+    st.html('<script>window.parent.location.reload();</script>', unsafe_allow_javascript=True)

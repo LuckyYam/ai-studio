@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
-
 import jwt
-
 from core import JWT_ALGORITHM, JWT_EXPIRY_DAYS_DEFAULT, JWT_EXPIRY_DAYS_REMEMBERED
+from core.models import IToken
+from typing import cast
 
 
 def create_auth_token(jwt_secret: str, user_id: str, remember_me: bool = False) -> str:
@@ -11,9 +11,9 @@ def create_auth_token(jwt_secret: str, user_id: str, remember_me: bool = False) 
     return jwt.encode(payload, jwt_secret, algorithm=JWT_ALGORITHM)
 
 
-def decode_auth_token(jwt_string: str, token: str):
+def decode_auth_token(jwt_string: str, token: str) -> IToken | None:
     try:
-        return jwt.decode(token, jwt_string, algorithms=[JWT_ALGORITHM])
+        return cast(IToken, jwt.decode(token, jwt_string, algorithms=[JWT_ALGORITHM]))
     except jwt.ExpiredSignatureError as err:
         print('decode err:', err)
         return None

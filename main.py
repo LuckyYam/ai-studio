@@ -52,9 +52,9 @@ if not st.session_state.is_logged_in:
         token = cookie_controller.get(AUTH_COOKIE_NAME)
     if token:
         payload = decode_auth_token(st.session_state.jwt_secret, token)
-        if payload:
+        if payload is not None:
             db = cast(Database, st.session_state.db)
-            user = db.get_user_by_id(payload['sub'])
+            user = db.get_user_by_id(int(payload['sub']))
             if user and user.get('is_active'):
                 st.session_state.is_logged_in = True
                 st.session_state.user = user

@@ -18,6 +18,7 @@ A full-stack AI chat assistant built with **Streamlit**, **Google Gemini**, and 
   - [Running the App](#running-the-app)
 - [Usage Guide](#usage-guide)
 - [Error Handling](#error-handling)
+- [Testing](#testing)
 - [Known Limitations](#known-limitations)
 - [Screenshots](#screenshots)
 
@@ -82,6 +83,7 @@ A full-stack AI chat assistant built with **Streamlit**, **Google Gemini**, and 
 | Documents | `xhtml2pdf` (PDF), `python-docx` + `htmldocx` (Word), `pandas` (CSV) |
 | Charts | `plotly` |
 | Data models | `pydantic` (structured Gemini output), `TypedDict` (internal typing) |
+| Testing | `pytest`, `pytest-mock`, `streamlit.testing.v1.AppTest` (dev-only, see [Testing](#testing)) |
 | Linting/formatting | `ruff` (dev-only, see [Installation](#installation)) |
 
 ---
@@ -135,12 +137,17 @@ A full-stack AI chat assistant built with **Streamlit**, **Google Gemini**, and 
 │   ├── dialogs.py                  # Rename/delete/export/sources/preview dialogs
 │   ├── model_controls.py           # Model selector, web search toggle
 │   └── message_render.py           # Message bubbles, attachments, copy button, document cards
-└── utils/
-    ├── text.py                    # count_words, highlight, timestamps, duration formatting
-    ├── files.py                    # Attachment handling, multimodal message parts
-    ├── serialization.py             # History encode/decode for DB storage
-    ├── ids.py                       # Conversation ID generation
-    └── clipboard.py                 # Copy-to-clipboard / menu-close iframe HTML
+├── utils/
+│   ├── text.py                    # count_words, highlight, timestamps, duration formatting
+│   ├── files.py                    # Attachment handling, multimodal message parts
+│   ├── serialization.py             # History encode/decode for DB storage
+│   ├── ids.py                       # Conversation ID generation
+│   └── clipboard.py                 # Copy-to-clipboard / menu-close iframe HTML
+└── tests/
+    ├── conftest.py                  # Shared fixtures: jwt_secret, mock_db_pool, mock_genai_client
+    ├── unit/                        # Pure-function tests (auth, utils)
+    ├── integration/                 # Database / chatbot tests against mocked pool & Gemini client
+    └── ui/                          # Streamlit AppTest page-level tests
 ```
 
 ---
@@ -239,7 +246,7 @@ Index: `idx_sources_message_id`. Populated from Gemini web-search grounding meta
 pip install -r requirements.txt
 ```
 
-Dev-only tooling (currently just `ruff` for linting/formatting) lives in a separate `requirements-dev.txt`, so it isn't installed in production:
+Dev-only tooling (`ruff` for linting/formatting, `pytest` for the test suite — see [Testing](#testing)) lives in a separate `requirements-dev.txt`, so it isn't installed in production:
 
 ```bash
 git clone https://github.com/LuckyYam/ai-studio.git
@@ -352,6 +359,47 @@ The app is designed to fail gracefully rather than crash:
 | Gemini API errors (rate limit, model errors, etc.) | Caught per call, surfaced via `st.error`/`st.toast`, conversation state is not corrupted |
 | MySQL connection/query failures | Caught in the `Database` class, raised as `RuntimeError` and surfaced to the user without a stack trace |
 | Unavailable attachments after DB reload | Marked `available: False` and shown with a "no longer available" indicator instead of breaking the message |
+
+---
+
+## Testing
+
+The test suite is split by how each layer is best verified: pure logic gets fast unit tests, database/AI-client boundaries get mocked integration tests, and page-level behavior gets Streamlit's `AppTest` harness. No test touches a real MySQL server or the real Gemini API.
+
+```
+tests/
+├── conftest.py           # shared fixtures: jwt_secret, mock_db_pool, mock_genai_client
+├── unit/
+│   ├── test_tokens.py         # JWT create/decode (auth/tokens.py)
+│   ├── test_passwords.py      # bcrypt hash/validate (auth/passwords.py)
+│   ├── test_serialization.py  # Gemini history encode/decode (utils/serialization.py)
+│   ├── test_text.py           # word count, highlighting, timestamps (utils/text.py)
+│   └── test_ids.py            # conversation ID generation (utils/ids.py)
+├── integration/
+│   ├── test_database.py       # Database class against a mocked connection pool
+│   └── test_chatbot.py        # get_chat / get_chat_title against a mocked genai.Client
+└── ui/
+    └── test_login.py          # pages/login.py via streamlit.testing.v1.AppTest
+```
+
+### Running the tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -q
+```
+
+Run a single layer, e.g. just the fast unit tests:
+
+```bash
+python -m pytest tests/unit -q
+```
+
+### Notes
+
+- **Unit tests** cover pure functions with no I/O — no mocking required.
+- **Integration tests** mock `mysql.connector.pooling.MySQLConnectionPool` (for `Database`) and `google.genai.Client` (for `chatbot.py`), so the actual SQL, commit/rollback behavior, and Gemini request-config logic are exercised without external services.
+- **UI tests** use `AppTest.from_file(...)` to run a page in isolation. `st.session_state` (`db`, `jwt_secret`) is seeded before each run, and `st.switch_page` is patched where a test needs to verify logic that runs just before a redirect, since page navigation isn't resolvable outside the full multi-page app context.
 
 ---
 
